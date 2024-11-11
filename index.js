@@ -14,8 +14,6 @@ app.use(cors({
 
 // الاتصال بقاعدة بيانات MongoDB Atlas
 mongoose.connect('mongodb+srv://sherif_hzaimia:ch0793478417@cluster0.oth1w.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
 }).then(() => {
   console.log('Connected to MongoDB Atlas');
 }).catch((error) => {
@@ -37,6 +35,7 @@ const Session = mongoose.model('Sessionpipiads', sessionSchema);
 
 async function extractSessionToken(res) {
   try {
+    console.log("Starting browser...");
     const browser = await puppeteer.launch({
       headless: true,
       args: [
@@ -48,26 +47,36 @@ async function extractSessionToken(res) {
         "--single-process",
       ]
     });
+    console.log("Browser started.");
 
     const page = await browser.newPage();
+    console.log("Navigating to login page...");
 
     // الذهاب إلى صفحة تسجيل الدخول لـ pipiads
     await page.goto("https://pipiads.com/login", {
-      waitUntil: "networkidle2",
-      timeout: 120000, //  120 ثانية  
+      waitUntil: "load", // انتظار تحميل الصفحة بالكامل
+      timeout: 120000, // 120 ثانية
     });
+    console.log("Login page loaded.");
 
-    // إدخال البريد الإلكتروني
+    // انتظار ظهور حقل البريد الإلكتروني ثم إدخال البريد الإلكتروني
+    await page.waitForSelector('input[placeholder="Veuillez saisir votre adresse e-mail"]', { timeout: 60000 });
     await page.type('input[placeholder="Veuillez saisir votre adresse e-mail"]', "spyessentials2024@outlook.com");
+    console.log("Email entered.");
 
-    // إدخال كلمة المرور
+    // انتظار ظهور حقل كلمة المرور ثم إدخال كلمة المرور
+    await page.waitForSelector('input[placeholder="Veuillez saisir votre mot de passe"]', { timeout: 60000 });
     await page.type('input[placeholder="Veuillez saisir votre mot de passe"]', "ScboLi12.");
+    console.log("Password entered.");
 
-    // النقر على زر تسجيل الدخول
+    // انتظار ظهور زر تسجيل الدخول ثم النقر عليه
+    await page.waitForSelector('button.el-button--primary', { timeout: 60000 });
     await page.click('button.el-button--primary');
+    console.log("Login button clicked.");
 
     // الانتظار حتى يتم التوجيه بعد تسجيل الدخول
     await page.waitForNavigation({ waitUntil: "networkidle2", timeout: 60000 });
+    console.log("Login successful, extracting cookies...");
 
     // استخراج الكوكيز بعد تسجيل الدخول
     const cookies = await page.cookies();
@@ -99,14 +108,14 @@ async function extractSessionToken(res) {
       // إرسال التوكين كاستجابة لـ API
       res.json({ success: true, token: sessionData });
     } else {
-      console.log("لم يتم العثور على توكين الجلسة.");
+      console.log("No session token found.");
       res.json({ success: false, message: "لم يتم العثور على توكين الجلسة." });
     }
 
     // إغلاق المتصفح
     await browser.close();
   } catch (error) {
-    console.error("حدث خطأ:", error);
+    console.error("An error occurred:", error);
     res.status(500).json({ success: false, message: "حدث خطأ أثناء استخراج التوكين." });
   }
 }
