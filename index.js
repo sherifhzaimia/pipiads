@@ -52,14 +52,26 @@ async function extractSessionToken(res) {
     // الذهاب إلى صفحة تسجيل الدخول لـ Pipiads
     await page.goto("https://pipiads.com/login", {
       waitUntil: "networkidle2",
-      timeout: 120000, // 120 ثانية
+      timeout: 120000,
     });
 
-    // إدخال البريد الإلكتروني
-    await page.type('input[placeholder="Veuillez saisir votre adresse e-mail"]', "spyessentials2024@outlook.com");
+    // التحقق من وجود حقل البريد الإلكتروني
+    const emailSelector = 'input[placeholder="Veuillez saisir votre adresse e-mail"]';
+    const emailField = await page.$(emailSelector);
+    if (emailField) {
+      await page.type(emailSelector, "spyessentials2024@outlook.com");
+    } else {
+      throw new Error("لم يتم العثور على حقل البريد الإلكتروني.");
+    }
 
-    // إدخال كلمة المرور
-    await page.type('input[placeholder="Veuillez saisir votre mot de passe"]', "ScboLi12.");
+    // التحقق من وجود حقل كلمة المرور
+    const passwordSelector = 'input[placeholder="Veuillez saisir votre mot de passe"]';
+    const passwordField = await page.$(passwordSelector);
+    if (passwordField) {
+      await page.type(passwordSelector, "ScboLi12.");
+    } else {
+      throw new Error("لم يتم العثور على حقل كلمة المرور.");
+    }
 
     // النقر على زر تسجيل الدخول
     await page.click('button.el-button--primary');
@@ -105,7 +117,7 @@ async function extractSessionToken(res) {
     await browser.close();
   } catch (error) {
     console.error("حدث خطأ:", error);
-    res.status(500).json({ success: false, message: "حدث خطأ أثناء استخراج التوكين." });
+    res.status(500).json({ success: false, message: "حدث خطأ أثناء استخراج التوكين.", error: error.message });
   }
 }
 
