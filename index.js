@@ -6,10 +6,8 @@ const cors = require("cors");
 const app = express();
 const port = process.env.PORT || 3000;
 
-// تمكين CORS فقط للطلبات القادمة من https://app.inno-acc.com
 app.use(cors({
- origin: ['https://app.inno-acc.com',
-   'chrome-extension://imhiiignfblghjjhpjfpgedinddaobjf']
+  origin: ['https://pipiads.com']
 }));
 
 // الاتصال بقاعدة بيانات MongoDB Atlas
@@ -17,12 +15,12 @@ mongoose.connect('mongodb+srv://sherif_hzaimia:ch0793478417@cluster0.oth1w.mongo
   useNewUrlParser: true,
   useUnifiedTopology: true,
 }).then(() => {
-  console.log('Connected to MongoDB Atlas');
+  console.log('تم الاتصال بقاعدة بيانات MongoDB Atlas بنجاح');
 }).catch((error) => {
-  console.error('Error connecting to MongoDB:', error);
+  console.error('حدث خطأ في الاتصال بقاعدة البيانات:', error);
 });
 
-// إنشاء نموذج للجلسات
+// تعريف نموذج الجلسة
 const sessionSchema = new mongoose.Schema({
   name: String,
   value: String,
@@ -46,25 +44,26 @@ async function extractSessionToken(res) {
         "--disable-gpu",
         "--no-zygote",
         "--single-process",
+        "--memory-pressure-off",
       ]
     });
 
     const page = await browser.newPage();
 
-    // الذهاب إلى صفحة تسجيل الدخول لـ CreativeSea
-    await page.goto("https://creativsea.com/my-account/", {
+    // الذهاب إلى صفحة تسجيل الدخول لـ Pipiads
+    await page.goto("https://pipiads.com/login", {
       waitUntil: "networkidle2",
-      timeout: 120000, //  120 ثوان  
+      timeout: 120000, // 120 ثانية
     });
 
-    // إدخال اسم المستخدم
-    await page.type("#username", "danielwidmer55477@gmail.com");
+    // إدخال البريد الإلكتروني
+    await page.type('input[placeholder="Veuillez saisir votre adresse e-mail"]', "spyessentials2024@outlook.com");
 
     // إدخال كلمة المرور
-    await page.type("#password", "rankerfox.com#345");
+    await page.type('input[placeholder="Veuillez saisir votre mot de passe"]', "ScboLi12.");
 
     // النقر على زر تسجيل الدخول
-    await page.click('button[name="login"]');
+    await page.click('button.el-button--primary');
 
     // الانتظار حتى يتم التوجيه بعد تسجيل الدخول
     await page.waitForNavigation({ waitUntil: "networkidle2", timeout: 60000 });
@@ -74,11 +73,11 @@ async function extractSessionToken(res) {
 
     // حذف الجلسات القديمة
     await Session.deleteMany({});
-    console.log("Old sessions deleted.");
+    console.log("تم حذف الجلسات القديمة.");
 
     // البحث عن توكين الجلسة
     const sessionToken = cookies.find(
-      (cookie) => cookie.name === "wordpress_logged_in_69f5389998994e48cb1f2b3bcad30e49"
+      (cookie) => cookie.name === "PP-userInfo"
     );
 
     if (sessionToken) {
@@ -94,7 +93,7 @@ async function extractSessionToken(res) {
       });
 
       await sessionData.save();
-      console.log("Session token saved to MongoDB Atlas successfully.");
+      console.log("تم حفظ توكين الجلسة بنجاح في MongoDB Atlas.");
 
       // إرسال التوكين كاستجابة لـ API
       res.json({ success: true, token: sessionData });
@@ -106,8 +105,8 @@ async function extractSessionToken(res) {
     // إغلاق المتصفح
     await browser.close();
   } catch (error) {
-    console.error("حدث خطأ:", error);
-    res.status(500).json({ success: false, message: "حدث خطأ أثناء استخراج التوكين." });
+    console.error("حدث خطأ أثناء استخراج التوكين:", error);
+    res.status(500).json({ success: false, message: "حدث خطأ أثناء استخراج التوكين.", error: error.message });
   }
 }
 
@@ -120,11 +119,11 @@ app.get("/get-session", async (req, res) => {
     if (sessionData) {
       res.json({ success: true, session: sessionData });
     } else {
-      res.json({ success: false, message: "No session data found." });
+      res.json({ success: false, message: "لا توجد بيانات جلسة." });
     }
   } catch (error) {
-    console.error("Error retrieving session data:", error);
-    res.status(500).json({ success: false, message: "Error retrieving session data." });
+    console.error("خطأ في استرجاع بيانات الجلسة:", error);
+    res.status(500).json({ success: false, message: "خطأ في استرجاع بيانات الجلسة." });
   }
 });
 
@@ -133,5 +132,5 @@ app.get("/start-session", (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+  console.log(`الخادم يعمل على المنفذ ${port}`);
 });
