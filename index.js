@@ -31,7 +31,7 @@ const sessionSchema = new mongoose.Schema({
   secure: Boolean,
 });
 
-const Session = mongoose.model('Sessionpipiads', sessionSchema);
+const Session = mongoose.model('Session', sessionSchema);
 
 async function extractSessionToken(res) {
   try {
@@ -110,7 +110,7 @@ async function extractSessionToken(res) {
 }
 
 // نقطة النهاية الجديدة لجلب أحدث بيانات الجلسة
-app.get("/get-pipiads", async (req, res) => {
+app.get("/get-session", async (req, res) => {
   try {
     // استرجاع أحدث جلسة من قاعدة البيانات
     const sessionData = await Session.findOne().sort({ _id: -1 });
@@ -126,7 +126,7 @@ app.get("/get-pipiads", async (req, res) => {
   }
 });
 
-app.get("/start-pipiads", (req, res) => {
+app.get("/start-session", (req, res) => {
   extractSessionToken(res);
 });
 
