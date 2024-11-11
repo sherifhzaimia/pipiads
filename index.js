@@ -31,7 +31,7 @@ const sessionSchema = new mongoose.Schema({
   secure: Boolean,
 });
 
-const Session = mongoose.model('Session', sessionSchema);
+const Session = mongoose.model('Sessionpipiads', sessionSchema);
 
 async function extractSessionToken(res) {
   try {
