@@ -6,13 +6,11 @@ const cors = require("cors");
 const app = express();
 const port = process.env.PORT || 3000;
 
-// تمكين CORS فقط للطلبات القادمة من https://app.inno-acc.com
 app.use(cors({
  origin: ['https://app.inno-acc.com',
    'chrome-extension://imhiiignfblghjjhpjfpgedinddaobjf']
 }));
 
-// الاتصال بقاعدة بيانات MongoDB Atlas
 mongoose.connect('mongodb+srv://sherif_hzaimia:ch0793478417@cluster0.oth1w.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', {
 }).then(() => {
   console.log('Connected to MongoDB Atlas');
@@ -20,7 +18,6 @@ mongoose.connect('mongodb+srv://sherif_hzaimia:ch0793478417@cluster0.oth1w.mongo
   console.error('Error connecting to MongoDB:', error);
 });
 
-// إنشاء نموذج للجلسات
 const sessionSchema = new mongoose.Schema({
   name: String,
   value: String,
@@ -36,6 +33,7 @@ const Session = mongoose.model('Sessionpipiads', sessionSchema);
 async function extractSessionToken(res) {
   try {
     console.log("Starting browser...");
+    // التغيير الرئيسي هنا - تعديل إعدادات المتصفح
     const browser = await puppeteer.launch({
       headless: true,
       args: [
@@ -47,51 +45,42 @@ async function extractSessionToken(res) {
         "--single-process",
       ]
     });
-    console.log("Browser started.");
+    console.log("Browser started with GUI.");
 
     const page = await browser.newPage();
     console.log("Navigating to login page...");
 
-    // الذهاب إلى صفحة تسجيل الدخول لـ pipiads
     await page.goto("https://pipiads.com/login", {
-      waitUntil: "load", // انتظار تحميل الصفحة بالكامل
-      timeout: 120000, // 120 ثانية
+      waitUntil: "load",
+      timeout: 120000,
     });
     console.log("Login page loaded.");
 
-    // انتظار ظهور حقل البريد الإلكتروني ثم إدخال البريد الإلكتروني
     await page.waitForSelector('input[placeholder="Veuillez saisir votre adresse e-mail"]', { timeout: 60000 });
-    await page.type('input[placeholder="Veuillez saisir votre adresse e-mail"]', "spyessentials2024@outlook.com");
+    await page.type('input[placeholder="Veuillez saisir votre adresse e-mail"]', "hzaimiacherif@gmail.com");
     console.log("Email entered.");
 
-    // انتظار ظهور حقل كلمة المرور ثم إدخال كلمة المرور
     await page.waitForSelector('input[placeholder="Veuillez saisir votre mot de passe"]', { timeout: 60000 });
-    await page.type('input[placeholder="Veuillez saisir votre mot de passe"]', "ScboLi12.");
+    await page.type('input[placeholder="Veuillez saisir votre mot de passe"]', "ch0793478417");
     console.log("Password entered.");
 
-    // انتظار ظهور زر تسجيل الدخول ثم النقر عليه
     await page.waitForSelector('button.el-button--primary', { timeout: 60000 });
     await page.click('button.el-button--primary');
     console.log("Login button clicked.");
 
-    // الانتظار حتى يتم التوجيه بعد تسجيل الدخول
-    await page.waitForNavigation({ waitUntil: "networkidle2", timeout: 60000 });
+    await page.waitForNavigation({ waitUntil: "networkidle2", timeout: 120000 });
     console.log("Login successful, extracting cookies...");
 
-    // استخراج الكوكيز بعد تسجيل الدخول
     const cookies = await page.cookies();
 
-    // حذف الجلسات القديمة
     await Session.deleteMany({});
     console.log("Old sessions deleted.");
 
-    // البحث عن توكين الجلسة
     const sessionToken = cookies.find(
       (cookie) => cookie.name === "PP-userInfo"
     );
 
     if (sessionToken) {
-      // حفظ التوكين في قاعدة البيانات
       const sessionData = new Session({
         name: sessionToken.name,
         value: sessionToken.value,
@@ -105,14 +94,12 @@ async function extractSessionToken(res) {
       await sessionData.save();
       console.log("Session token saved to MongoDB Atlas successfully.");
 
-      // إرسال التوكين كاستجابة لـ API
       res.json({ success: true, token: sessionData });
     } else {
       console.log("No session token found.");
       res.json({ success: false, message: "لم يتم العثور على توكين الجلسة." });
     }
 
-    // إغلاق المتصفح
     await browser.close();
   } catch (error) {
     console.error("An error occurred:", error);
@@ -120,10 +107,8 @@ async function extractSessionToken(res) {
   }
 }
 
-// نقطة النهاية الجديدة لجلب أحدث بيانات الجلسة
 app.get("/get-session", async (req, res) => {
   try {
-    // استرجاع أحدث جلسة من قاعدة البيانات
     const sessionData = await Session.findOne().sort({ _id: -1 });
 
     if (sessionData) {
